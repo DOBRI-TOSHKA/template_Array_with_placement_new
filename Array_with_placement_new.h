@@ -1,6 +1,35 @@
 #ifndef ARRAY_WITH_PLACEMENT_NEW
 #define ARRAY_WITH_PLACEMENT_NEW
 
+/*
+ * Placement new.
+ * Данный оператор не выделяет память, а получает своим аргументом адрес
+ * на уже выделенную каким-либо образом память (например, на стеке или через malloc()).
+ * Происходит размещение (инициализация) объекта путём вызова конструктора,
+ * и объект создается в памяти по указанному адресу. Часто такой метод применяют,
+ * когда у класса нет конструктора по умолчанию или недоступен оператор присванивания
+ * и при этом нужно создать массив объектов.
+ *
+ * */
+
+/*
+ * explicit конструктор
+ * Ключевое слово explicit запрещает автоматическое конвертирования конструктора *
+ * Например:
+ *
+ * class MyClass {
+ *   int i;
+ * public:
+ *   explicit MyClass(int j)
+ *     {i = j;}
+ *   // ...
+ * };
+ *
+ * MyClass ob2 = 10;    //ERROR
+ * MyClass ob2(10);     //OK ;)
+ *
+ * */
+
 #include <cstddef>
 #include <iostream>
 
@@ -8,9 +37,10 @@ template<class T>
 class Array{
 
 public:
+
     Array();
 
-    Array(size_t size, const T& value = T());
+    explicit Array(size_t size, const T& value = T());
 
     Array(Array const &ob);
 
@@ -37,7 +67,7 @@ private:
 template<class T>
 Array<T>::Array(size_t size_, const T& value):size(size_),
                                               capacity(size_),
-                                              arr(reinterpret_cast<T*>(operator new[](size_*sizeof(T))))
+                                              arr(static_cast<T*>(operator new[](size_*sizeof(T))))
 {
     for(size_t i = 0; i < size; ++i)  new (arr+i) T(value);
 }
@@ -47,7 +77,6 @@ Array<T>::Array():size(0),
                   capacity(0),
                   arr(nullptr)
 {
-
 }
 
 template<class T>
@@ -79,14 +108,14 @@ template<class T>
 T &Array<T>::operator[](size_t i){
 
     if(i >= 0 && i < size) return arr[i];
-    return arr[0];
+    throw -1;
 }
 
 template<class T>
 const T& Array<T>::operator[](size_t i) const{
 
     if(i >= 0 && i < size) return arr[i];
-    return arr[0];
+    throw -1;
 }
 
 template<class T>
@@ -107,7 +136,7 @@ void Array<T>::append(const T &value){
     else{
 
         capacity = 2 * capacity +1;
-        T *arr_tmp = reinterpret_cast<T*>(operator new[](capacity * sizeof(T)));
+        T *arr_tmp = static_cast<T*>(operator new[](capacity * sizeof(T)));
 
         for(size_t i = 0; i < size; ++i){
 
@@ -152,7 +181,7 @@ void Array<T>::insert(const size_t index, const T &value)
     else{
 
         capacity = 2 * capacity +1;
-        T *arr_tmp = reinterpret_cast<T*>(operator new[](capacity * sizeof(T)));
+        T *arr_tmp = static_cast<T*>(operator new[](capacity * sizeof(T)));
 
         for(size_t i = size - 1; i >= index; --i){
 
@@ -176,5 +205,3 @@ Array<T>::~Array(){
 }
 
 #endif
-
-
